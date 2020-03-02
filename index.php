@@ -11,12 +11,34 @@
         // Chek for form submission: 
         if ($_SERVER['REQUEST_METHOD'] == 'POST'){
             // Minimal form validation
-            if (!empty($_POST['name']) 
-            && !empty($_POST['email']) 
-            && !empty($_POST['comments'])){
+
+            function spam_scrubber($value){ 
+                // List of values to scrub
+                $very_bad = ['to:', 'cc', 'bcc:', 'content-type:', 'mime-version:', 'multipart-mixed:', 'content-transfer-encoding:'];
+
+                // If any of the ver bad strings are in
+                // the submitted value, return an empty string: 
+                foreach ($very_bad as $v){
+                    if(stripos($value,$v) !== false) return ''; 
+                }
+
+                // Replace new line characters with spaces:
+                $value = str_replace(["\r", "\n", "%0a", "%0d"], ' ', $value);
+
+                // Return the value: 
+                return trim($value);
+            } // End spam scrubber
+
+            // Clean the form data:
+            $scrubbed = array_map('spam_scrubber', $_POST);
+
+            // Minimal form validation
+            if (!empty($scrubbed['name']) 
+                && !empty($scrubbed['email']) 
+                && !empty($scrubbed['comments'])) {
 
             // Create body:
-            $body = "Name: {$_POST['name']}\n\nComments: {$_POST['comments']}";
+            $body = "Name: {$scrubbed['name']}\n\nComments: {$scrubbed['comments']}";
 
             // Limit the length to 70 characters : 
             $body = wordwrap($body, 70);
